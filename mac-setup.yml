@@ -1,0 +1,148 @@
+---
+- name: Manually setup basics
+  hosts: localhost
+  tasks:
+  - name: System Preferences
+    pause: prompt="Please follow the steps on http://sourabhbajaj.com/mac-setup/SystemPreferences/README.html. Press Return to continue."
+  - name: Install XCode
+    pause: prompt="Please install xcode from https://developer.apple.com/xcode/. Press Return to continue."
+  - name: Install XCode Commandline Tools
+    command: xcode-select --install
+    ignore_errors: yes
+# huh? why bash_profile?
+  - name: Add /usr/local/bin to PATH
+    lineinfile: dest=~/.bash_profile line='export PATH="/usr/local/bin:$PATH"' create=yes
+  - name: Install required roles
+    command: ansible-galaxy install geerlingguy.homebrew
+  - name: iTerm2
+    pause: prompt="Please follow the steps on http://sourabhbajaj.com/mac-setup/iTerm/README.html. Press Return to continue."
+  - name: zsh
+    pause: prompt="Please configure zsh as described on http://sourabhbajaj.com/mac-setup/iTerm/zsh.html. Press Return to continue."
+  - name: git
+    pause: prompt="Please configure git as described on http://sourabhbajaj.com/mac-setup/Git/README.html. Press Return to continue."
+  - name: gitignore
+    # automate using lineinfile
+    pause: prompt="Please configure gitignore as described on http://sourabhbajaj.com/mac-setup/Git/gitignore.html. Press Return to continue."
+  - name: sublime
+    pause: prompt="Please follow the steps on http://sourabhbajaj.com/mac-setup/SublimeText/README.html and below. Press Return to continue."
+  - name: java
+    pause: prompt="Please follow the steps on http://sourabhbajaj.com/mac-setup/Java/README.html. Press Return to continue."
+  - name: LaTeX
+    pause: prompt="Please follow the steps on http://sourabhbajaj.com/mac-setup/LaTeX/README.html. Press Return to continue."
+  - name: Applications
+    pause: prompt="Have a look at http://sourabhbajaj.com/mac-setup/Apps/README.html. Press Return to continue."
+  - name: Security
+    pause: prompt="Have a look at http://sourabhbajaj.com/mac-setup/Security/README.html. Press Return to continue."
+  - name: References
+    pause: prompt="Have a look at http://sourabhbajaj.com/mac-setup/References/README.html. Press Return to continue."
+
+
+
+- name: Install homebrew and packges
+  hosts: localhost
+  vars:
+    homebrew_upgrade_all_packages: no
+    homebrew_taps:
+    - samueljohn/python
+    - homebrew/science
+    homebrew_installed_packages:
+      - gcc
+      - git
+      - heroku-toolbelt
+      - samueljohn/python/matplotlib
+      - mysql
+      - node
+      - samueljohn/python/numpy
+      - python
+      - rbenv
+      - ruby-build
+      - rbenv-default-gems
+      - rbenv-gemset
+      - sbt
+      - scala
+      - samueljohn/python/scipy
+      - zsh
+      - zsh-completions
+    homebrew_cask_apps:
+      - google-chrome
+      - qlcolorcode
+      - qlstephen
+      - qlmarkdown
+      - quicklook-json
+      - qlprettypatch
+      - quicklook-csv
+      - betterzipql
+      - webpquicklook
+      - suspicious-package
+#      - airmail
+      - alfred
+      - android-file-transfer
+#      - asepsis
+      - appcleaner
+      - caffeine
+      - cheatsheet
+#      - dockertoolbox
+      - doubletwist
+      - dropbox
+      - google-chrome
+      - google-drive
+      - google-hangouts
+      - flux
+#      - latexian
+      - 1password
+#      - pdftk
+      - spectacle
+      - sublime-text
+      - superduper
+      - totalfinder
+      - transmission
+      - vagrant
+      - vagrant-manager
+      - valentina-studio
+      - virtualbox
+      - vlc
+  roles:
+    - geerlingguy.homebrew
+  tasks:
+  - name: Install packages via pip
+    pip: name={{ item }}
+    with_items:
+    - ipython
+    - nose
+    - pep8
+    - pyparsing
+    - python-dateutil
+    - virtualenv
+  - name: Install packages via npm
+    npm: name={{ item }} global=yes
+    with_items:
+    - coffee-script
+    - grunt-cli
+  - name: Create project directory
+    file: path=~/Projects/config state=directory mode=0755
+  - name: Create project directory
+    file: path=~/.rbenv state=directory mode=0755
+  - name: Copy env.sh
+    copy: src=env.sh dest=~/Projects/config/env.sh
+  - name: Add env.sh to .zshrc
+    lineinfile: dest=~/.zshrc line="source ~/Projects/config/env.sh"
+  - name: Get brew path for rbenv
+    shell: brew --prefix rbenv
+    register: rbenv
+  - name: Configure bundler
+    lineinfile: dest="{{ rbenv.stdout }}/default-gems" line="bundler" create=yes
+  - name: Disable gem documentation generation
+    lineinfile: "dest=~/.gemrc line='gem: --no-document' create=yes"
+  - name: Add rails to default-gems
+    lineinfile: dest=~/.rbenv/default-gems line="rails" create=yes
+  - name: rbenv install 2.3.1
+    command: rbenv install -s 2.3.1
+  - name: rbenv global 2.3.1
+    command: rbenv global 2.3.1
+  - name: Install packages via gem
+    gem: name={{ item }}
+    with_items:
+    - bundler
+    - jekyll
+    - kramdown
+    - rails
